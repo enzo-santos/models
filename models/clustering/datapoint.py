@@ -1,4 +1,4 @@
-from classifiers.clustering.position import Position
+from models.clustering.position import Position
 
 
 class DataPoint:

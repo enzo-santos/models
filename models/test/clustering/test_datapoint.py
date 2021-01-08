@@ -1,7 +1,7 @@
 import unittest
 
-from classifiers.clustering.datapoint import DataPoint
-from classifiers.clustering.position import Position
+from models.clustering.datapoint import DataPoint
+from models.clustering.position import Position
 
 
 class DataPointTestCase(unittest.TestCase):

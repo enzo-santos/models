@@ -1,6 +1,6 @@
 import unittest
 
-from classifiers.clustering.position import Position
+from models.clustering.position import Position
 
 
 class PositionTestCase(unittest.TestCase):

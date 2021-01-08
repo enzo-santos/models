@@ -1,8 +1,8 @@
 import unittest
 
-from classifiers.clustering.cluster import Cluster
-from classifiers.clustering.datapoint import DataPoint
-from classifiers.clustering.position import Position
+from models.clustering.cluster import Cluster
+from models.clustering.datapoint import DataPoint
+from models.clustering.position import Position
 
 
 class ClusterTestCase(unittest.TestCase):

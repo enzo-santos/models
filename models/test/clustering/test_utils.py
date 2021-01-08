@@ -1,6 +1,6 @@
 import unittest
 
-from classifiers.clustering.utils import distance
+from models.clustering.utils import distance
 
 
 class UtilsTestCase(unittest.TestCase):

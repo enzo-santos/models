@@ -3,10 +3,10 @@ import unittest
 import unittest.mock
 from typing import List, Sequence, Optional
 
-from classifiers.clustering.cluster import Cluster
-from classifiers.clustering.datapoint import DataPoint
-from classifiers.clustering.kmeans.cluster import find
-from classifiers.clustering.position import Position
+from models.clustering.cluster import Cluster
+from models.clustering.datapoint import DataPoint
+from models.clustering.kmeans.cluster import find
+from models.clustering.position import Position
 
 
 class ClusterTestCase(unittest.TestCase):

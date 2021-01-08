@@ -1,8 +1,8 @@
 import collections
 from typing import List
 
-from classifiers.clustering.datapoint import DataPoint
-from classifiers.clustering.position import Position
+from models.clustering.datapoint import DataPoint
+from models.clustering.position import Position
 
 
 class Cluster(collections.abc.Iterable, collections.abc.Sized):

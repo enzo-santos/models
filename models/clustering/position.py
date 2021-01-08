@@ -1,4 +1,4 @@
-from classifiers.clustering.utils import distance
+from models.clustering.utils import distance
 
 
 class Position:
