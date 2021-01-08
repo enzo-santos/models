@@ -1,0 +1,14 @@
+sudo: false
+
+language: python
+
+python: 3.8
+
+install:
+  - pip install codecov
+
+script:
+  - coverage run --source=classifiers --omit="*/test*" -m unittest discover -s classifiers
+
+after_success:
+  - codecov
