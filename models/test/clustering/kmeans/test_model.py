@@ -5,13 +5,13 @@ from typing import List, Sequence, Optional
 
 from models.clustering.cluster import Cluster
 from models.clustering.datapoint import DataPoint
-from models.clustering.kmeans.cluster import find
+from models.clustering.kmeans.model import find
 from models.clustering.position import Position
 
 
 class ClusterTestCase(unittest.TestCase):
     @staticmethod
-    def _mock_centroids_selection(num_fixed_points: int):
+    def _mock_CentroidSelection(num_fixed_points: int):
         """
         Mocka os centróides iniciais do algoritmo.
 
@@ -43,10 +43,10 @@ class ClusterTestCase(unittest.TestCase):
         self._root, _ = os.path.split(__file__)
         self._root += os.sep
 
-    def _get(self, filename: str) -> str:
+    def _get_path(self, filename: str) -> str:
         return self._root + filename
 
-    def test_instantiation(self):
+    def test_Init(self):
         self.assertRaises(
             ValueError,
             lambda: find(
@@ -65,7 +65,7 @@ class ClusterTestCase(unittest.TestCase):
             )
         )
 
-    def _test_file(
+    def _test_ClusteringOnSample(
             self,
             filename: str,
             strategy: str,
@@ -77,7 +77,7 @@ class ClusterTestCase(unittest.TestCase):
 
         # Carrega o arquivo
         ranges = {}
-        with open(self._get(filename)) as f:
+        with open(self._get_path(filename)) as f:
             for i, line in enumerate(f):
                 line = line.strip()
                 x, y, c = line.split(",")
@@ -96,7 +96,7 @@ class ClusterTestCase(unittest.TestCase):
 
         # Aplica o algoritmo
         clusters: List[Cluster]
-        with unittest.mock.patch("random.sample", side_effect=self._mock_centroids_selection(len(fixed_points_id))):
+        with unittest.mock.patch("random.sample", side_effect=self._mock_CentroidSelection(len(fixed_points_id))):
             clusters = find(
                 points,
                 n_clusters=n_clusters,
@@ -108,28 +108,30 @@ class ClusterTestCase(unittest.TestCase):
         for i, cluster in enumerate(clusters):
             position = cluster.position
             x_min, y_min, x_max, y_max = ranges[i]
-            self.assertTrue(x_min <= position.x <= x_max)
-            self.assertTrue(y_min <= position.y <= y_max)
+            self.assertLessEqual(x_min, position.x)
+            self.assertLessEqual(position.x, x_max)
+            self.assertLessEqual(y_min, position.y)
+            self.assertLessEqual(position.y, y_max)
 
         return clusters
 
-    def test_k_means_3(self):
-        self._test_file("sample1.csv", strategy='mean', n_clusters=3)
+    def test_KMeans_3Clusters(self):
+        self._test_ClusteringOnSample("sample1.csv", strategy='mean', n_clusters=3)
 
-    def test_k_medians_3(self):
-        self._test_file("sample2.csv", strategy='median', n_clusters=3)
+    def test_KMedians_3Clusters(self):
+        self._test_ClusteringOnSample("sample2.csv", strategy='median', n_clusters=3)
 
-    def test_k_means_2(self):
-        self._test_file("sample3.csv", strategy='mean', n_clusters=2)
+    def test_KMeans_2Clusters(self):
+        self._test_ClusteringOnSample("sample3.csv", strategy='mean', n_clusters=2)
 
-    def test_outlier(self):
+    def test_KMeans_WithOutlier(self):
         # Outlier na linha 1
-        clusters = self._test_file("sample4.csv", strategy='mean', n_clusters=3)
+        clusters = self._test_ClusteringOnSample("sample4.csv", strategy='mean', n_clusters=3)
         self.assertIn(Position(-10, -10), [cluster.position for cluster in clusters])
         cluster = next(cluster for cluster in clusters if cluster.position == Position(-10, -10))
         self.assertEqual(1, len(cluster))
 
-    def test_fixed_points(self):
+    def test_KMeans_FixedPoints(self):
         # Ponto fixo na linha 1
-        clusters = self._test_file("sample5.csv", strategy='mean', n_clusters=3, fixed_points_id=["0_0"])
+        clusters = self._test_ClusteringOnSample("sample5.csv", strategy='mean', n_clusters=3, fixed_points_id=["0_0"])
         self.assertIn(Position(5, 7), [cluster.position for cluster in clusters])

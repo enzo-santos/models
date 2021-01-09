@@ -1,4 +1,4 @@
-from models.clustering.utils import distance
+from models.utils.linear_alg import euclidean
 
 
 class Position:
@@ -23,7 +23,7 @@ class Position:
         :param other: a outra coordenada.
         :return: a distância entre esta e a outra coordenada.
         """
-        return distance((self.x, self.y), (other.x, other.y))
+        return euclidean([self.x, self.y], [other.x, other.y])
 
     def __eq__(self, other):
         return isinstance(other, Position) and self.x == other.x and self.y == other.y

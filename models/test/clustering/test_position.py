@@ -4,7 +4,7 @@ from models.clustering.position import Position
 
 
 class PositionTestCase(unittest.TestCase):
-    def test_instantiation(self):
+    def test_Init(self):
         position: Position = Position(1, 2)
         self.assertEqual(1, position.x)
         self.assertEqual(2, position.y)
@@ -12,7 +12,7 @@ class PositionTestCase(unittest.TestCase):
         position = Position(0, 0)
         self.assertEqual(position.x, position.y)
 
-    def test_distance(self):
+    def test_DistanceTo(self):
         p0: Position = Position(0, 3)
         p1: Position = Position(4, 0)
         self.assertEqual(5, p0.distance_to(p1))
@@ -32,7 +32,7 @@ class PositionTestCase(unittest.TestCase):
         d1 = Position(0, 10).distance_to(Position(1, 12))
         self.assertNotEqual(d0, d1)
 
-    def test_equality(self):
+    def test_EqualsTo(self):
         p0: Position = Position(1, 2)
         self.assertEqual(p0, p0)
         self.assertNotEqual(p0, (1, 2))
@@ -51,7 +51,7 @@ class PositionTestCase(unittest.TestCase):
         p1 = Position(2, 1)
         self.assertNotEqual(hash(p0), hash(p1))
 
-    def test_repr(self):
+    def test_Repr(self):
         p0: Position = Position(1, 2)
         repr_ = repr(p0)
         self.assertIn(f"Position", repr_)

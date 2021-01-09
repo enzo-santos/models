@@ -6,11 +6,11 @@ from models.clustering.position import Position
 
 
 class ClusterTestCase(unittest.TestCase):
-    def test_instantiation(self):
+    def test_Init(self):
         cluster: Cluster = Cluster(Position(0, 0))
         self.assertEqual(Position(0, 0), cluster.position)
 
-    def test_iterable(self):
+    def test_Iterable(self):
         cluster: Cluster = Cluster(Position(0, 0))
         self.assertEqual(0, len(cluster))
         for _ in cluster:
@@ -31,7 +31,7 @@ class ClusterTestCase(unittest.TestCase):
         cluster.add(DataPoint("d", Position(3, 3)))
         self.assertEqual(3, len(cluster))
 
-    def test_distance(self):
+    def test_TotalDistance(self):
         cluster: Cluster = Cluster(Position(0, 0))
         self.assertEqual(0, cluster.distance())
 
@@ -44,7 +44,7 @@ class ClusterTestCase(unittest.TestCase):
         cluster.add(DataPoint("p2", Position(5, 12)))
         self.assertEqual(18, cluster.distance())
 
-    def test_repr(self):
+    def test_Repr(self):
         position: Position = Position(0, 0)
         cluster: Cluster = Cluster(position)
         repr_ = repr(cluster)

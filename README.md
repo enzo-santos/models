@@ -12,3 +12,7 @@ Implementação de alguns algoritmos de aprendizado de máquina.
 - [x] k-means
 
 - [x] k-medians
+
+### Classificação
+
+- [x] k-nearest neighbors 
