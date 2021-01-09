@@ -18,7 +18,7 @@ def split_into_train_test(
     :param X: matriz que representa as características de cada amostra.
     :param y: vetor que representa as classes de cada amostra.
     :param test_sampling: proporção do conjunto de dados original a ser incluído nas amostras de teste a serem
-                            retornadas; padrão 30%.
+                            retornadas, padrão 30%.
     :return: conjuntos resultantes da divisão das amostras de entrada.
 
     .. _sklearn.model_selection.train_test_split: https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html

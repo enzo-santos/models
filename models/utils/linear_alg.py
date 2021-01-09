@@ -6,6 +6,18 @@ Vector = List[float]
 
 
 def check_dimension_match(X: Matrix, y: Vector, allow_empty: bool = True) -> int:
+    """
+    Verifica se uma matriz e um vetor possuem dimensões compatíveis.
+
+    Uma matriz M e um vetor V possuem dimensões compatíveis se o número de linhas
+    de M é o mesmo número de elementos de V.
+
+    :param X: a matriz a ser verificada.
+    :param y: o vetor a ser verificado.
+    :param allow_empty: define se matrizes e vetores vazios são permitidos.
+    :raises ValueError: se a matriz e o vetor não possuem dimensões compatíveis.
+    :return: a dimensão da matriz e do vetor.
+    """
     rows_X = len(X)
     size_y = len(y)
     if rows_X != size_y:

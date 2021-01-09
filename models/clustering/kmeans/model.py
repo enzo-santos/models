@@ -21,7 +21,7 @@ def find(
     :param points: pontos do conjunto de dados.
     :param n_clusters: número de clusters a serem encontrados.
     :param strategy: define a estratégia de clusterização; 'mean' para k-means, 'median' para k-medians
-    :param n_iterations: número de iterações do algoritmo; padrão 500
+    :param n_iterations: número de iterações do algoritmo, padrão 500
     :param should_fix_point: função que define quais pontos devem ser considerados fixos como centróides durante a
                                 execução. Isso é útil se houver alguns centróides predefinidos no conjunto de dados que
                                 devem ser levados em consideração. Se `None`, nenhum ponto será fixo.

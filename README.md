@@ -16,3 +16,7 @@ Implementação de alguns algoritmos de aprendizado de máquina.
 ### Classificação
 
 - [x] k-nearest neighbors 
+
+## Uso
+
+Os exemplos de utilização dos algoritmos implementados estão no diretório **models/samples**.
