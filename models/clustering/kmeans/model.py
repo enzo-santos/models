@@ -1,73 +1,81 @@
 import random
 import statistics
-from typing import List, Sequence, Callable
+from typing import List, Optional, Union
 
-from models.clustering.cluster import Cluster
-from models.clustering.datapoint import DataPoint
-from models.clustering.position import Position
+from models.clustering.cluster import _Cluster
+from models.utils.linear_alg import Matrix, euclidean, Vector
 
 
-def find(
-        points: Sequence[DataPoint],
-        *,
-        n_clusters: int,
-        strategy: str = 'mean',
-        n_iterations: int = 500,
-        should_fix_point: Callable[[DataPoint], bool] = None,
-) -> List[Cluster]:
-    """
-    Encontra clusters em um conjunto de dados usando k-means ou k-medians.
+class KMeans:
+    def __init__(self, *, n_clusters: int = 3, n_iterations: int = 500, strategy: str = 'mean',
+                 n_fixed_points: int = 0):
+        if n_clusters < n_fixed_points:
+            raise ValueError("the number of fixed samples exceeds the number of clusters")
 
-    :param points: pontos do conjunto de dados.
-    :param n_clusters: número de clusters a serem encontrados.
-    :param strategy: define a estratégia de clusterização; 'mean' para k-means, 'median' para k-medians
-    :param n_iterations: número de iterações do algoritmo, padrão 500
-    :param should_fix_point: função que define quais pontos devem ser considerados fixos como centróides durante a
-                                execução. Isso é útil se houver alguns centróides predefinidos no conjunto de dados que
-                                devem ser levados em consideração. Se `None`, nenhum ponto será fixo.
-    :raise ValueError: se o argumento 'strategy' for inválido ou se o número de pontos fixos for maior que o número de
-                        clusters a serem encontrados.
-    :return: os clusters encontrados.
-    """
-    if strategy not in ('mean', 'median'):
-        raise ValueError(f'invalid strategy: {strategy}')
-    strategy = statistics.mean if strategy == 'mean' else statistics.median
+        if strategy not in ('mean', 'median'):
+            raise ValueError(f'invalid clustering strategy: {strategy}')
 
-    fixed_points: List[DataPoint] = []
-    non_fixed_points: List[DataPoint] = []
-    if should_fix_point is None:
-        non_fixed_points.extend(points)
-    else:
-        for point in points:
-            if should_fix_point(point):
-                fixed_points.append(point)
-            else:
-                non_fixed_points.append(point)
+        self.n_clusters = n_clusters
+        self.n_iterations = n_iterations
+        self.strategy = strategy
+        self.n_fixed_points = n_fixed_points
 
-    n_fixed_points: int = len(fixed_points)
-    n_remaining: int = n_clusters - n_fixed_points
-    if n_remaining < 0:
-        raise ValueError('the number of fixed points exceeds the number of clusters')
+        self.labels_: Optional[Vector] = None
+        self.cluster_centers_: Optional[Matrix] = None
+        self._X: Optional[Matrix] = None
 
-    starting_points: List[DataPoint] = fixed_points
-    if n_remaining > 0:
-        starting_points.extend(random.sample(non_fixed_points, n_remaining))
+    def fit(self, X: Matrix) -> 'KMeans':
+        self._X = X
+        strategy = statistics.mean if self.strategy == 'mean' else statistics.median
 
-    centroids: List[Position] = [point.position for point in starting_points]
-    clusters: List[Cluster] = []
-    for _ in range(n_iterations):
-        clusters = [Cluster(position) for position in centroids]
-        for point in points:
-            distances: List[float] = [point.distance_to(cluster.position) for cluster in clusters]
-            i: int = distances.index(min(distances))
-            clusters[i].add(point)
+        fixed_samples: Matrix = X[:self.n_fixed_points]
+        n_remaining: int = self.n_clusters - self.n_fixed_points
 
-        for i, cluster in enumerate(clusters[n_fixed_points:], start=n_fixed_points):
-            if len(cluster) == 1:
-                continue
+        centroids: Matrix = fixed_samples
+        if n_remaining > 0:
+            centroids.extend(random.sample(X[self.n_fixed_points:], n_remaining))
 
-            x_m: float = strategy(point.position.x for point in cluster)
-            y_m: float = strategy(point.position.y for point in cluster)
-            centroids[i] = Position(x_m, y_m)
+        clusters: List[_Cluster] = []
+        for _ in range(self.n_iterations):
+            clusters = [_Cluster(center) for center in centroids]
+            for sample in X:
+                cluster = min(clusters, key=lambda c: euclidean(sample, c.center))
+                cluster.add(sample)
 
-    return clusters
+            for i, cluster in enumerate(clusters[self.n_fixed_points:], start=self.n_fixed_points):
+                if len(cluster) == 1:
+                    continue
+
+                centroid = [strategy(dimension) for dimension in zip(*cluster)]
+                centroids[i] = centroid
+
+        self.cluster_centers_ = [cluster.center for cluster in clusters]
+        self.labels_ = []
+        for sample in X:
+            cluster_label = next(i for i, cluster in enumerate(clusters) if sample in cluster)
+            self.labels_.append(cluster_label)
+
+        return self
+
+    def predict(self, X: Union[Vector, Matrix]) -> Union[float, Vector]:
+        """
+        Prediz os clusters dos dados fornecidos.
+
+        :param X: as características das amostras a serem previstas.
+        :return: o(s) índice(s) do(s) cluster(s) das amostras fornecidas.
+        """
+        if self._X is None:
+            raise ValueError("you must call 'fit' before calling 'predict'")
+
+        is_vector = all(isinstance(v, (float, int)) for v in X)
+        X = [X] if is_vector else X
+
+        y = []
+        for sample in X:
+            distances = [(i, euclidean(sample, center)) for i, center in enumerate(self.cluster_centers_)]
+            cluster_label = min(distances, key=lambda x: x[1])[0]
+            if is_vector:
+                return cluster_label
+            y.append(cluster_label)
+
+        return y

@@ -1,44 +1,42 @@
-import collections
-from typing import List
+from typing import List, Iterable, Sized
 
-from models.clustering.datapoint import DataPoint
-from models.clustering.position import Position
+from models.utils.linear_alg import Vector, euclidean
 
 
-class Cluster(collections.abc.Iterable, collections.abc.Sized):
+class _Cluster(Iterable[Vector], Sized):
     """
-    Representa um cluster que agrupa pontos.
+    Representa um cluster que agrupa amostras.
     """
 
-    def __init__(self, position: Position, points: List[DataPoint] = None):
+    def __init__(self, center: Vector, samples: List[Vector] = None):
         """
         Cria um cluster.
 
-        :param position: a posição do centróide desse cluster.
-        :param points: os pontos desse cluster. Se `None`, o cluster está vazio.
+        :param center: a amostra que representa o centroide desse cluster.
+        :param samples: as amostras desse cluster. Se `None`, o cluster está vazio.
         """
-        self.position: Position = position
-        self._children: List[DataPoint] = [] if points is None else points
+        self.center: Vector = center
+        self._samples: List[Vector] = [] if samples is None else samples
 
-    def add(self, point: DataPoint):
+    def add(self, sample: Vector):
         """
-        Adiciona um ponto a este cluster.
+        Adiciona uma amostra a este cluster.
 
-        :param point: o ponto a ser adicionado.
+        :param sample: a amostra a ser adicionada.
         """
-        self._children.append(point)
+        self._samples.append(sample)
 
     def distance(self):
         """
         :return: a soma das distâncias do centroide do cluster a todos os seus pontos.
         """
-        return sum(self.position.distance_to(point.position) for point in self._children)
+        return sum(euclidean(self.center, sample) for sample in self._samples)
 
     def __iter__(self):
-        return iter(self._children)
+        return iter(self._samples)
 
     def __len__(self):
-        return len(self._children)
+        return len(self._samples)
 
     def __repr__(self):
-        return f'Cluster({self.position}, {self._children})'
+        return f'_Cluster({self.center}, {self._samples})'

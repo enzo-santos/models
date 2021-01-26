@@ -1,17 +1,15 @@
+import collections
 import random
 import unittest
 import unittest.mock
-from typing import List, Sequence, Optional
 
-from models.clustering.cluster import Cluster
-from models.clustering.datapoint import DataPoint
-from models.clustering.kmeans.model import find
-from models.clustering.position import Position
+from models.clustering.kmeans.model import KMeans
+from models.utils.linear_alg import Matrix, Vector
 
 
 class ClusterTestCase(unittest.TestCase):
     @staticmethod
-    def _mock_CentroidSelection(num_fixed_points: int):
+    def _mock_CentroidSelection(y: Vector, num_fixed_points: int):
         """
         Mocka os centróides iniciais do algoritmo.
 
@@ -27,11 +25,12 @@ class ClusterTestCase(unittest.TestCase):
         :return: o mock simulando a função `random.sample`.
         """
 
-        def mock(sequence: Sequence[DataPoint], n: int):
+        def mock(X: Matrix, n: int):
             points = []
             for i in range(num_fixed_points, n + num_fixed_points):
-                grouped_points = [point for point in sequence if point.id.endswith(f"_{i}")]
-                points.append(random.choice(grouped_points))
+                grouped_samples = [sample for j, sample in enumerate(X) if y[num_fixed_points:][j] == i]
+                points.append(random.choice(grouped_samples))
+
             return points
 
         return mock
@@ -46,74 +45,53 @@ class ClusterTestCase(unittest.TestCase):
     def _get_path(self, filename: str) -> str:
         return self._root + filename
 
-    def test_Init(self):
-        self.assertRaises(
-            ValueError,
-            lambda: find(
-                [DataPoint("a", Position(1, 2)), DataPoint("b", Position(3, 4)), DataPoint("c", Position(5, 6))],
-                n_clusters=2,
-                strategy='',
-            ),
-        )
-
-        self.assertRaises(
-            ValueError,
-            lambda: find(
-                [DataPoint("a", Position(1, 2)), DataPoint("b", Position(3, 4)), DataPoint("c", Position(5, 6))],
-                n_clusters=2,
-                should_fix_point=lambda x: True,
-            )
-        )
-
     def _test_ClusteringOnSample(
             self,
             filename: str,
             strategy: str,
             n_clusters: int,
-            fixed_points_id: Optional[List[str]] = None,
-    ) -> List[Cluster]:
-        fixed_points_id = [] if fixed_points_id is None else fixed_points_id
-        points: List[DataPoint] = []
-
+            n_fixed_points: int = 0,
+    ) -> KMeans:
         # Carrega o arquivo
+        X: Matrix = []
+        y: Vector = []
         ranges = {}
         with open(self._get_path(filename)) as f:
             for i, line in enumerate(f):
-                line = line.strip()
-                x, y, c = line.split(",")
-                x = float(x)
-                y = float(y)
+                x_, y_, c = line.strip().split(",")
+                x_ = float(x_)
+                y_ = float(y_)
                 c = int(c)
 
                 # Calcula uma margem de erro aceitável para cada centroide
                 class_ranges = ranges.setdefault(c, [float('+inf'), float('+inf'), float('-inf'), float('-inf')])
-                class_ranges[0] = x if x < class_ranges[0] else class_ranges[0]  # x_min
-                class_ranges[1] = y if y < class_ranges[1] else class_ranges[1]  # y_min
-                class_ranges[2] = x if x > class_ranges[2] else class_ranges[2]  # x_max
-                class_ranges[3] = y if y > class_ranges[3] else class_ranges[3]  # y_max
+                class_ranges[0] = min(x_, class_ranges[0])  # x_min
+                class_ranges[1] = min(y_, class_ranges[1])  # y_min
+                class_ranges[2] = max(x_, class_ranges[2])  # x_max
+                class_ranges[3] = max(y_, class_ranges[3])  # y_max
 
-                points.append(DataPoint(f"{i}_{c}", Position(x, y)))
+                X.append([x_, y_])
+                y.append(c)
 
         # Aplica o algoritmo
-        clusters: List[Cluster]
-        with unittest.mock.patch("random.sample", side_effect=self._mock_CentroidSelection(len(fixed_points_id))):
-            clusters = find(
-                points,
-                n_clusters=n_clusters,
-                strategy=strategy,
-                should_fix_point=None if not fixed_points_id else (lambda point: point.id in fixed_points_id),
-            )
+        clf: KMeans = KMeans(n_clusters=n_clusters, strategy=strategy, n_fixed_points=n_fixed_points)
+        with unittest.mock.patch("random.sample", side_effect=self._mock_CentroidSelection(y, n_fixed_points)):
+            clf.fit(X)
 
         # Verifica se os centroides gerados estão dentro da margem de erro aceitável
-        for i, cluster in enumerate(clusters):
-            position = cluster.position
+        for i, centroid in enumerate(clf.cluster_centers_):
+            x_, y_ = centroid
             x_min, y_min, x_max, y_max = ranges[i]
-            self.assertLessEqual(x_min, position.x)
-            self.assertLessEqual(position.x, x_max)
-            self.assertLessEqual(y_min, position.y)
-            self.assertLessEqual(position.y, y_max)
+            self.assertLessEqual(x_min, x_)
+            self.assertLessEqual(x_, x_max)
+            self.assertLessEqual(y_min, y_)
+            self.assertLessEqual(y_, y_max)
 
-        return clusters
+        return clf
+
+    def test_Init(self):
+        self.assertRaises(ValueError, lambda: KMeans(strategy=''))
+        self.assertRaises(ValueError, lambda: KMeans(n_clusters=4, n_fixed_points=5))
 
     def test_KMeans_3Clusters(self):
         self._test_ClusteringOnSample("sample1.csv", strategy='mean', n_clusters=3)
@@ -126,12 +104,27 @@ class ClusterTestCase(unittest.TestCase):
 
     def test_KMeans_WithOutlier(self):
         # Outlier na linha 1
-        clusters = self._test_ClusteringOnSample("sample4.csv", strategy='mean', n_clusters=3)
-        self.assertIn(Position(-10, -10), [cluster.position for cluster in clusters])
-        cluster = next(cluster for cluster in clusters if cluster.position == Position(-10, -10))
-        self.assertEqual(1, len(cluster))
+        clf: KMeans = self._test_ClusteringOnSample("sample4.csv", strategy='mean', n_clusters=3)
+        self.assertIn([-10, -10], [centroid for centroid in clf.cluster_centers_])
+        self.assertTrue(any(count == 1 for _, count in collections.Counter(clf.labels_).items()))
 
     def test_KMeans_FixedPoints(self):
         # Ponto fixo na linha 1
-        clusters = self._test_ClusteringOnSample("sample5.csv", strategy='mean', n_clusters=3, fixed_points_id=["0_0"])
-        self.assertIn(Position(5, 7), [cluster.position for cluster in clusters])
+        clf = self._test_ClusteringOnSample("sample5.csv", strategy='mean', n_clusters=3, n_fixed_points=1)
+        self.assertIn([5, 7], [centroid for centroid in clf.cluster_centers_])
+
+    def test_Prediction(self):
+        clf: KMeans = KMeans()
+        self.assertRaises(ValueError, lambda: clf.predict([[1, 2], [3, 4]]))
+
+        clf.fit([[1, 1], [5, 5], [10, 10]])
+        c0, c1, c2 = clf.predict([[1, 1], [5, 5], [10, 10]])
+        self.assertEqual({0, 1, 2}, {c0, c1, c2})
+
+        self.assertEqual(c0, clf.predict([1, 1]))
+        self.assertEqual(c1, clf.predict([5, 5]))
+        self.assertEqual(c2, clf.predict([10, 10]))
+
+        self.assertEqual(c0, clf.predict([0, 0]))
+        self.assertEqual(c1, clf.predict([4, 4]))
+        self.assertEqual(c2, clf.predict([11, 11]))
