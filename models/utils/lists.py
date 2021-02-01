@@ -1,7 +1,40 @@
-from typing import List
+from typing import List, TypeVar, Any
+
+T = TypeVar('T')
+R = TypeVar('R')
 
 
-def split_list(array: List, n_lists: int):
+def rows(matrix: List[List[Any]]):
+    """
+    Retorna o número de linhas de uma matriz.
+
+    :param matrix: a matriz.
+    :return: o número de linhas dessa matriz.
+    """
+    return len(matrix)
+
+
+def cols(matrix: List[List[Any]], *, check_if_equal=True):
+    """
+    Retorna o número de colunas de uma matriz.
+
+    :param matrix: a matriz.
+    :param check_if_equal: se é obrigatório as linhas dessa matriz possuírem comprimentos iguais.
+    :raises ValueError: se a matriz não possuir nenhuma linha ou, se ``check_if_equal`` for `True`, se as linhas dessa
+                            matriz possuírem comprimentos diferentes.
+    :return: o número de colunas dessa matriz.
+    """
+    if rows(matrix) == 0:
+        raise ValueError("this matrix does not have any rows")
+
+    v0 = matrix[0]
+    if check_if_equal and not all(len(v0) == len(v) for v in matrix):
+        raise ValueError("columns in this matrix are not the same size")
+
+    return len(v0)
+
+
+def split_list(array: List[T], n_lists: int) -> List[List[T]]:
     """
     Divide uma lista em um conjunto de listas.
 
@@ -28,7 +61,7 @@ def split_list(array: List, n_lists: int):
     return lists
 
 
-def sort_by(a1: List, a2: List, reverse: bool = False) -> List:
+def sort_by(a1: List[T], a2: List[T], reverse: bool = False) -> List[T]:
     """
     Ordena uma lista com base nos valores de outra lista.
 

@@ -9,13 +9,13 @@ Implementação de alguns algoritmos de aprendizado de máquina.
 
 ### Clusterização
 
-- [x] k-means
-
-- [x] k-medians
+- [x] k-*means* e k-*medians*
 
 ### Classificação
 
-- [x] k-nearest neighbors 
+- [x] k-*nearest neighbors*
+
+- [x] Rede neural (*multi-layer perceptron*)
 
 ## Uso
 
